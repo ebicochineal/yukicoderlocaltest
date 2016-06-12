@@ -1,0 +1,1 @@
+javascript:if(location.href.slice(0, 19) == "http://yukicoder.me"){prompt("REVEL_SESSION",document.cookie.split("REVEL_SESSION=")[1].split(";")[0]);}
