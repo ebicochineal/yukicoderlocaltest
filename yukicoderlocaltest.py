@@ -45,7 +45,7 @@ class TestCase():
         for i in self.zip.filelist:
             self.result[i] = self.run(i)
             r = self.result[i]
-            print(self.stcolor(r[0]), r[1], self.fixedlen(i, 14))
+            print(self.stcolor(r[0]), r[1], fixedlen(i, 14))
     def run(self, filename):
         data_in = self.zip.read("test_in/" + filename)
         data_out = self.zip.read("test_out/" + filename)
@@ -56,7 +56,7 @@ class TestCase():
             outputs = p.communicate(input=data_in_encode, timeout=gtimeout)
             executiontime = time.time() - start
             out = outputs[0].decode("utf-8").replace("\r\n", "\n")
-            err = outputs[1].decode("utf-8")
+            err = outputs[1].decode("utf-8").replace("\r\n", "\n")
             if out == data_out:
                 return ("AC", "%.3f"%(executiontime), out)
             elif err == "":
@@ -67,34 +67,12 @@ class TestCase():
             p.kill()
             p.wait()
             return ("TLE", "-----", "")
-    def fixedlen(self, s, n):
-        if n <= 3:
-            s = s[:n]
-        else:
-            if len(s) > n:
-                s = s[:n-3] + "..."
-        return ("{: <" + str(n) + "}").format(s)
     def stcolor(self, status):
-        s = self.fixedlen(status, 3)
+        s = fixedlen(status, 3)
         if status == "AC":
             return "\033[42;30m" + s + "\033[0m"
         else:
             return "\033[43;30m" + s + "\033[0m"
-    def strlist(self, s, w, h):
-        r = []
-        for i in s.split("\n"):
-            if len(i) > w:
-                for j in range(len(i)//w):
-                    r += [i[j*w:j*w+w]]
-                if len(i)%w:
-                    r += [i[(len(i)//w)*w:]]
-            else:
-                r += [i]
-        if len(r) < h : r += [""] * (h-len(r))
-        if len(r) > h : r = r[:h]
-        for i in range(h):
-            r[i] = r[i] + " " * (w-len(r[i]))
-        return r
     def view(self):
         n = 0
         m = len(self.zip.filelist)
@@ -107,19 +85,19 @@ class TestCase():
             g = os.get_terminal_size()
             w = g.columns // 3 - 1
             h = g.lines - 6
-            f = lambda s : self.strlist(self.fixedlen(s, 2000), w, h)
-            lin = f(data_in)
-            lout = f(data_out)
-            lprg = f(r[2])
+            
+            lin = strlist(fixedlen(data_in, 2000), w, h)
+            lout = strlist(fixedlen(data_out, 2000), w, h)
+            lprg = strlist(fixedlen(r[2], 2000), w, h)
             
             os.system(gcls)
             print(self.stcolor(r[0]), r[1])
-            print(self.fixedlen("data_in", w+1) + self.fixedlen("data_out", w+1) + self.fixedlen("program_output", w))
+            print(fixedlen("data_in", w+1) + fixedlen("data_out", w+1) + fixedlen("program_output", w))
             
             for y in range(h):
                 print(lin[y] + '|' + lout[y] + '|' + lprg[y])
             print("-"*(g.columns-1))
-            print(self.fixedlen("Next : [ENTER]     Quit : [Q]", w*2+2) + self.fixedlen(i, 14))
+            print(fixedlen("Next : [ENTER]     Quit : [Q]", w*2+2) + fixedlen(i, 14))
             while 1:
                 s = input()
                 if s == "" and time.time() - timer > 0.4:
@@ -128,6 +106,30 @@ class TestCase():
                     if n >= m : n = 0
                     break
                 if s == "q" : quit()
+
+def fixedlen(s, n):
+    if n <= 3:
+        s = s[:n]
+    else:
+        if len(s) > n:
+            s = s[:n-3] + "..."
+    return ("{: <" + str(n) + "}").format(s)
+
+def strlist(s, w, h):
+    r = []
+    for i in s.split("\n"):
+        if len(i) > w:
+            for j in range(len(i)//w):
+                r += [i[j*w:j*w+w]]
+            if len(i)%w:
+                r += [i[(len(i)//w)*w:]]
+        else:
+            r += [i]
+    if len(r) < h : r += [""] * (h-len(r))
+    if len(r) > h : r = r[:h]
+    for i in range(h):
+        r[i] = r[i] + " " * (w-len(r[i]))
+    return r
 
 def create_cookiefile(session):
     try:
