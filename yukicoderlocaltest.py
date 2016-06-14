@@ -14,22 +14,22 @@ g_in = "test_in/"
 g_out = "test_out/"
 g_zipdir = "testcase/"
 g_timeout = 2
-g_com = {}
+g_cmd = {}
 g_cls = ""
 
 def setenv():
     global g_cls
     if "win"in sys.platform:
-        g_com["py"] = ["C:/Windows/py.exe"]
-        g_com["go"] = ["go", "run"]
+        g_cmd["py"] = ["C:/Windows/py.exe"]
+        g_cmd["go"] = ["go", "run"]
         g_cls = "cls"
     else:
-        g_com["go"] = ["go", "run"]
+        g_cmd["go"] = ["go", "run"]
         g_cls = "clear"
 
 class TestCase():
     def __init__(self, num, ext, progpath):
-        self.com = (g_com[ext] if ext in g_com else []) + [progpath]
+        self.cmd = (g_cmd[ext] if ext in g_cmd else []) + [progpath]
         self.data = {}
         self.zippath = g_path + g_zipdir + num_to_zipname(num)
         self.filelist = []
@@ -47,7 +47,7 @@ class TestCase():
         dout2k = lenfixed(data_out, 2000)
         result = []
         start = time.time()
-        p = Popen(self.com, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        p = Popen(self.cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE)
         try:
             outerr = p.communicate(input=data_in_encode, timeout=g_timeout)
             etime = "%.3f"%(time.time() - start)
@@ -126,7 +126,7 @@ def testcase_download(num):
         return False
 
 def testcase_test(testcase):
-    print(" ".join(testcase.com))
+    print(" ".join(testcase.cmd))
     for i, j, k in testcase.tests():
         print(i, j, k)
     print("TestCase View : [ENTER]     Quit : [Q]")
