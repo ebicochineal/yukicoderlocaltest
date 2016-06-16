@@ -36,7 +36,7 @@ def setenv():
         g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
         g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
         g_cmdc["cpp"] = ["g++", "-o", "[o]", "[i]"]
-        g_cmdc["cs"] = ["csc", "/out:[o]", "[i]"]
+        g_cmdc["cs"] = ["mcs", "/out:[o]", "[i]"]
         g_cls = "clear"
 
 class TestCase():
@@ -119,7 +119,7 @@ def conv_cmd(cmd, progpath):
     r = []
     for i in cmd:
         i = i.replace("[i]", progpath)
-        i = i.replace("[o]", g_builddir + "test.exe")
+        i = i.replace("[o]", g_crdir + g_builddir + "test.exe")
         r += [i]
     return r
 
@@ -196,7 +196,7 @@ def main():
             print("Build >>>", " ".join(g_cmdc[ext]))
             os.system(" ".join(g_cmdc[ext]))
             ext = "exe"
-            progpath = g_builddir + "test.exe"
+            progpath = g_crdir + g_builddir + "test.exe"
         if not os.path.exists(g_crdir + g_zipdir + num_to_zipname(num)):
             print("TestCase Download...")
             if testcase_download(num):
