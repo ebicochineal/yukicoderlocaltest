@@ -9,29 +9,42 @@ import http
 import http.cookiejar
 from subprocess import Popen, PIPE
 
-g_path = os.path.dirname(__file__) + "/"
+g_crdir = os.path.dirname(__file__) + "/"
+g_zipdir = "testcase/"
+g_builddir = "build/"
 g_in = "test_in/"
 g_out = "test_out/"
-g_zipdir = "testcase/"
-g_timeout = 2
-g_cmd = {}
+# g_compilerpath = "C:/MinGW/bin"
+g_timeout = 3
+g_cmdc = {}
+g_cmdi = {}
 g_cls = ""
 
 def setenv():
     global g_cls
+    # os.environ["PATH"] = os.environ["PATH"] + ";" + g_compilerpath
     if "win"in sys.platform:
-        g_cmd["py"] = ["C:/Windows/py.exe"]
-        g_cmd["go"] = ["go", "run"]
+        g_cmdi["py"] = ["C:/Windows/py.exe", "[i]"]
+        # g_cmdi["go"] = ["go", "run", "[i]"]
+        g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
+        g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
+        g_cmdc["cpp"] = ["g++", "-o", "[o]", "[i]"]
+        g_cmdc["cs"] = ["csc", "/out:[o]", "[i]"]
         g_cls = "cls"
     else:
-        g_cmd["go"] = ["go", "run"]
+        # g_cmdi["go"] = ["go", "run", "[i]"]
+        g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
+        g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
+        g_cmdc["cpp"] = ["g++", "-o", "[o]", "[i]"]
+        g_cmdc["cs"] = ["mcs", "/out:[o]", "[i]"]
         g_cls = "clear"
 
 class TestCase():
     def __init__(self, num, ext, progpath):
-        self.cmd = (g_cmd[ext] if ext in g_cmd else []) + [progpath]
+        cmd = g_cmdi[ext] if ext in g_cmdi else ["[i]"]
+        self.cmd = conv_cmd(cmd, progpath)
         self.data = {}
-        self.zippath = g_path + g_zipdir + num_to_zipname(num)
+        self.zippath = g_crdir + g_zipdir + num_to_zipname(num)
         self.filelist = []
         with zipfile.ZipFile(self.zippath, 'r') as z:
             self.filelist = sorted([x.split(g_in)[1] for x in z.namelist() if g_in in x])
@@ -102,10 +115,18 @@ def num_to_zipname(num):
         num = num[-4:]
     return "No{:0>4}.zip".format(num)
 
+def conv_cmd(cmd, progpath):
+    r = []
+    for i in cmd:
+        i = i.replace("[i]", progpath)
+        i = i.replace("[o]", g_crdir + g_builddir + "test.exe")
+        r += [i]
+    return r
+
 def create_cookiefile(session):
     try:
         expires = (datetime.datetime.today() + datetime.timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
-        with open(g_path + "cookie.txt", "w") as f:
+        with open(g_crdir + "cookie.txt", "w") as f:
             w = '#LWP-Cookies-2.0\nSet-Cookie3: REVEL_SESSION="%s"; path="/"; domain="yukicoder.me"; path_spec; expires="%s"; version=0'%(session, expires)
             f.write(w)
         return True
@@ -115,20 +136,24 @@ def create_cookiefile(session):
 def testcase_download(num):
     try:
         cj = http.cookiejar.LWPCookieJar()
-        cj.load(g_path + "cookie.txt")
+        cj.load(g_crdir + "cookie.txt")
         opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
         url = "http://yukicoder.me/problems/no/" + num + "/testcase.zip"
         with opener.open(url) as r:
-            with open(g_path + g_zipdir + num_to_zipname(num), "wb") as f:
+            with open(g_crdir + g_zipdir + num_to_zipname(num), "wb") as f:
                 f.write(r.read())
         return True
     except:
         return False
 
 def testcase_test(testcase):
-    print(" ".join(testcase.cmd))
+    print("Run >>>", " ".join(testcase.cmd))
     for i, j, k in testcase.tests():
         print(i, j, k)
+    rm = g_crdir + g_builddir + "test.exe"
+    if os.path.exists(rm):
+        print("Remove >>>", g_builddir + "test.exe")
+        os.remove(rm)
     print("TestCase View : [ENTER]     Quit : [Q]")
 
 def testcase_view(testcase):
@@ -148,31 +173,37 @@ def testcase_view(testcase):
             print("|".join([lin[y], lout[y], lprg[y]]))
         print("-"*(tw-1))
         print(lenfixed("Next : [ENTER]     Quit : [Q]", w*2+2) + lenfixed(i, w))
-        
         s = input()
         if s == "" : n = (n+1) % len(testcase.filelist)
         if s == "q" : sys.exit()
 
 def main():
     os.system(g_cls)
-    if not os.path.exists(g_path + "cookie.txt"):
+    if not os.path.exists(g_crdir + g_zipdir):
+        os.mkdir(g_crdir + g_zipdir)
+    if not os.path.exists(g_crdir + g_builddir):
+        os.mkdir(g_crdir + g_builddir)
+    if not os.path.exists(g_crdir + "cookie.txt"):
         session = input("REVEL_SESSION = ")
         create_cookiefile(session)
-    if not os.path.exists(g_path + "testcase"):
-            os.mkdir(g_path + "testcase")
-    if os.path.exists(g_path + "cookie.txt"):
+    if os.path.exists(g_crdir + "cookie.txt"):
         tpp = input("TestProgram Path = ").replace('"', '')
         opd = os.path.dirname(tpp)
         progpath = (os.getcwd() + tpp if opd == "" else tpp).replace("\\", "/")
         num, ext = os.path.basename(tpp).split(".")
-        if not os.path.exists(g_path + g_zipdir + num_to_zipname(num)):
+        if ext in g_cmdc:
+            g_cmdc[ext] = conv_cmd(g_cmdc[ext], progpath)
+            print("Build >>>", " ".join(g_cmdc[ext]))
+            os.system(" ".join(g_cmdc[ext]))
+            ext = "exe"
+            progpath = g_crdir + g_builddir + "test.exe"
+        if not os.path.exists(g_crdir + g_zipdir + num_to_zipname(num)):
             print("TestCase Download...")
             if testcase_download(num):
                 print("Download Completed")
             else:
                 print("Download Failed")
-        if os.path.exists(g_path + g_zipdir + num_to_zipname(num)):
-            os.system(g_cls)
+        if os.path.exists(g_crdir + g_zipdir + num_to_zipname(num)):
             t = TestCase(num, ext, progpath)
             testcase_test(t)
             while 1:
