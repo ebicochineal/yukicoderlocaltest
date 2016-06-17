@@ -42,7 +42,7 @@ def setenv():
 class TestCase():
     def __init__(self, num, ext, progpath):
         cmd = g_cmdi[ext] if ext in g_cmdi else ["[i]"]
-        self.cmd = conv_cmd(cmd, progpath)
+        self.cmd = raplace_cmd(cmd, progpath)
         self.data = {}
         self.zippath = g_crdir + g_zipdir + num_to_zipname(num)
         self.filelist = []
@@ -115,7 +115,7 @@ def num_to_zipname(num):
         num = num[-4:]
     return "No{:0>4}.zip".format(num)
 
-def conv_cmd(cmd, progpath):
+def raplace_cmd(cmd, progpath):
     r = []
     for i in cmd:
         i = i.replace("[i]", progpath)
@@ -192,7 +192,7 @@ def main():
         progpath = (os.getcwd() + tpp if opd == "" else tpp).replace("\\", "/")
         num, ext = os.path.basename(tpp).split(".")
         if ext in g_cmdc:
-            g_cmdc[ext] = conv_cmd(g_cmdc[ext], progpath)
+            g_cmdc[ext] = raplace_cmd(g_cmdc[ext], progpath)
             print("Build >>>", " ".join(g_cmdc[ext]))
             os.system(" ".join(g_cmdc[ext]))
             ext = "exe"
