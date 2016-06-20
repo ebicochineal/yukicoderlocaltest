@@ -30,7 +30,7 @@ def setenv():
         # g_cmdi["go"] = ["go", "run", "[i]"]
         g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
         g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
-        g_cmdc["cpp"] = ["g++", "-o", "[o]", "[i]"]
+        g_cmdc["cpp"] = ["g++", "-std=c++14", "-static-libstdc++", "-o", "[o]", "[i]"]
         g_cmdc["cs"] = ["csc", "/out:[o]", "[i]"]
         g_cls = "cls"
     else:
@@ -68,7 +68,7 @@ class Test():
             etime = "%.3f"%(time.time() - start)
             out = outerr[0].decode("utf-8").replace("\r\n", "\n")
             err = outerr[1].decode("utf-8").replace("\r\n", "\n")
-            if equal(out, data_out):
+            if jadge(out, data_out):
                 result = [green("AC "), etime, din2k, dout2k, out]
             elif err == "":
                 result = [yellow("WA "), "-----", din2k, dout2k, out]
@@ -83,7 +83,7 @@ class Test():
         with ZipFile(self.zippath, 'r') as z:
             return z.read(path).decode("utf-8")
 
-def equal(v1, v2):
+def jadge(v1, v2):
     if v1 == v2 : return True
     sp1 = v1.split("\n")
     sp2 = v2.split("\n")
@@ -285,7 +285,7 @@ def main():
             testcase_download(num)
     if num == None or ext == None or testprog == None:
         return
-    if os.path.exists(g_crdir + g_testdir + zipname(num)):
+    if os.path.exists(g_crdir + g_testdir + zipname(num)) and os.path.exists(testprog):
         t = Test(num, ext, testprog)
         testcase_test(t)
         view_quit_loop(t)
