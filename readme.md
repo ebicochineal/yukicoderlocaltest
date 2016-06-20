@@ -7,6 +7,6 @@ bookmarklet.txtの中身を空のブックマークのＵＲＬに入力してyu
 
 yukicoderからダウンロードするには [ ゆるふわ ] に設定する必要があります
 
-テストするプログラムは
-問題ナンバー.py .exeなどにしてください
-0001.py, 1.py, 1.exe 
+テストするプログラム名に問題ナンバーが入っていると問題ナンバーの入力を省略できます
+○　0001.py, 1.py, 1.exe problem0001.exe yukicoder0001.exe
+×　0001problem.exe　0001test.exe
