@@ -37,7 +37,7 @@ def setenv():
         # g_cmdi["go"] = ["go", "run", "[i]"]
         g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
         g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
-        g_cmdc["cpp"] = ["g++", "-o", "[o]", "[i]"]
+        g_cmdc["cpp"] = ["g++", "-std=c++14", "-o", "[o]", "[i]"]
         g_cmdc["cs"] = ["mcs", "/out:[o]", "[i]"]
         g_cls = "clear"
 
@@ -145,7 +145,7 @@ def raplace_cmd(cmd, progpath):
     r = []
     for i in cmd:
         i = i.replace("[i]", progpath)
-        i = i.replace("[o]", g_builddir + "test.exe")
+        i = i.replace("[o]", g_crdir + g_builddir + "test.exe")
         r += [i]
     return r
 
