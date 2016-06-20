@@ -30,14 +30,14 @@ def setenv():
         # g_cmdi["go"] = ["go", "run", "[i]"]
         g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
         g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
-        g_cmdc["cpp"] = ["g++", "-std=c++14", "-static-libstdc++", "-o", "[o]", "[i]"]
+        g_cmdc["cpp"] = ["g++", "-std=c++11", "-static-libgcc", "-static-libstdc++", "-o", "[o]", "[i]"]
         g_cmdc["cs"] = ["csc", "/out:[o]", "[i]"]
         g_cls = "cls"
     else:
         # g_cmdi["go"] = ["go", "run", "[i]"]
         g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
         g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
-        g_cmdc["cpp"] = ["g++", "-std=c++14", "-o", "[o]", "[i]"]
+        g_cmdc["cpp"] = ["g++", "-std=c++11", "-o", "[o]", "[i]"]
         g_cmdc["cs"] = ["mcs", "/out:[o]", "[i]"]
         g_cls = "clear"
 
@@ -160,9 +160,9 @@ def testcase_download(num):
         with opener.open(url) as r:
             with open(g_crdir + g_testdir + zipname(num), "wb") as f:
                 f.write(r.read())
-        print("Download Completed")
+        print("TestCase Download Completed")
     except:
-        print("Download Failed")
+        print("TestCase Download Failed")
 
 def samplecase_download(num):
     if os.path.exists(g_crdir + g_sampledir + zipname(num)) : return
@@ -177,7 +177,7 @@ def samplecase_download(num):
         for i in ht.split("<h6>出力</h6>")[1:]:
             s = i.split("<pre>")[1].split("</pre>")[0]
             data_out_list += [s + "\n"]
-        print("Download Completed")
+        print("SampleCase Download Completed")
         sampledir = g_crdir + g_sampledir
         provisionaldir = sampledir + zipname(num).split(".")[0] + "/"
         try_mkdir(provisionaldir)
@@ -194,7 +194,7 @@ def samplecase_download(num):
                 z.write(provisionaldir + g_out + filename, g_out + filename)
         shutil.rmtree(provisionaldir)
     except:
-        print("Download Failed")
+        print("SampleCase Download Failed")
 
 def testcase_test(test):
     print("Run >>>", " ".join(test.cmd))
@@ -235,7 +235,6 @@ def program_select():
     opbsp = os.path.basename(tpp).split(".")
     ext = opbsp[1] if len(opbsp) > 1 else None
     num = problemnumber(testprog)
-    print(testprog)
     if num == None :
         num = problemnumber(input("Problem Number = "))
     if ext in g_cmdc:
@@ -283,6 +282,7 @@ def main():
         num, ext, testprog = program_select()
         if num != None:
             testcase_download(num)
+            samplecase_download(num)
     if num == None or ext == None or testprog == None:
         return
     if os.path.exists(g_crdir + g_testdir + zipname(num)) and os.path.exists(testprog):
