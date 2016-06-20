@@ -68,7 +68,7 @@ class Test():
             etime = "%.3f"%(time.time() - start)
             out = outerr[0].decode("utf-8").replace("\r\n", "\n")
             err = outerr[1].decode("utf-8").replace("\r\n", "\n")
-            if out == data_out:
+            if equal(out, data_out):
                 result = [green("AC "), etime, din2k, dout2k, out]
             elif err == "":
                 result = [yellow("WA "), "-----", din2k, dout2k, out]
@@ -82,6 +82,20 @@ class Test():
     def read(self, path):
         with ZipFile(self.zippath, 'r') as z:
             return z.read(path).decode("utf-8")
+
+def equal(v1, v2):
+    if v1 == v2 : return True
+    sp1 = v1.split("\n")
+    sp2 = v2.split("\n")
+    if len(sp1) != len(sp2) : return False
+    for i in range(len(sp1)):
+        if sp1[i] != sp2[i]:
+            try:
+                if round(float(sp1[i]), 3) != round(float(sp2[i]), 3):
+                    return False
+            except:
+                return False
+    return True
 
 def green(s):
     return "\033[42;30m" + s + "\033[0m"
@@ -123,7 +137,6 @@ def problemnumber(filename):
         elif len(num) > 0:
             if i == "." : break
             num = ""
-            break
     if len(num) > 4:
         num = num[-4:]
     return num if len(num) > 0 else None
@@ -222,6 +235,7 @@ def program_select():
     opbsp = os.path.basename(tpp).split(".")
     ext = opbsp[1] if len(opbsp) > 1 else None
     num = problemnumber(testprog)
+    print(testprog)
     if num == None :
         num = problemnumber(input("Problem Number = "))
     if ext in g_cmdc:
