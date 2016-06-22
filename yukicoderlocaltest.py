@@ -16,30 +16,40 @@ g_sampledir = "samplecase/"
 g_builddir = "build/"
 g_in = "test_in/"
 g_out = "test_out/"
-# g_compilerpath = "C:/MinGW/bin" + ";" + "C:/Program Files (x86)/MSBuild/14.0/bin"
+g_workingdir = ""
 g_timeout = 2
 g_cmdc = {}
 g_cmdi = {}
+g_op = ""
 g_cls = ""
 
 def setenv():
-    global g_cls
-    # os.environ["PATH"] = os.environ["PATH"] + ";" + g_compilerpath
-    if "win"in sys.platform:
-        g_cmdi["py"] = ["C:/Windows/py.exe", "[i]"]
-        # g_cmdi["go"] = ["go", "run", "[i]"]
-        g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
-        g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
-        g_cmdc["cpp"] = ["g++", "-std=c++11", "-static-libgcc", "-static-libstdc++", "-o", "[o]", "[i]"]
-        g_cmdc["cs"] = ["csc", "/out:[o]", "[i]"]
+    global g_workingdir, g_timeout, g_op, g_cls
+    if len(sys.argv) > 1 : g_op = sys.argv[1]
+    if "win" in sys.platform and "darwin" != sys.platform:
         g_cls = "cls"
     else:
-        # g_cmdi["go"] = ["go", "run", "[i]"]
-        g_cmdc["go"] = ["go", "build", "-o", "[o]", "[i]"]
-        g_cmdc["c"] = ["gcc", "-o", "[o]", "[i]"]
-        g_cmdc["cpp"] = ["g++", "-std=c++11", "-o", "[o]", "[i]"]
-        g_cmdc["cs"] = ["mcs", "/out:[o]", "[i]"]
         g_cls = "clear"
+    with open(g_crdir + "setting.ini", encoding="UTF-8") as f:
+        mode = ""
+        for i in f.readlines():
+            s = i.strip()
+            if len(i) > 1 and i[:2] != "//":
+                if s[0] == "[":
+                    mode = s
+                else:
+                    if mode == "[path]":
+                        os.environ["PATH"] = os.environ["PATH"] + ";" + s
+                    if mode == "[workingdirectory]":
+                        g_workingdir = s
+                    if mode == "[tle]":
+                        g_timeout = int(s)
+                    if mode == "[compile]":
+                        ext, cmd = splitcmd(s)
+                        g_cmdc[ext] = cmd.split()
+                    if mode == "[script]":
+                        ext, cmd = splitcmd(s)
+                        g_cmdi[ext] = cmd.split()
 
 class Test():
     def __init__(self, num, ext, prog, case):
@@ -103,6 +113,19 @@ def green(s):
 def yellow(s):
     return "\033[43;30m" + s + "\033[0m"
 
+def splitcmd(s):
+    ext = ""
+    cmd = ""
+    f = 0
+    for i in s:
+        if i != ":" or f:
+            if f:
+                cmd += i
+            else:
+                ext += i
+        if i == ":" : f = 1
+    return (ext.strip(), cmd.strip())
+
 def lenfixed(s, n):
     if n <= 3:
         s = s[:n]
@@ -134,7 +157,7 @@ def cmdio(cmd, prog):
 def path_to_nep(s):
     s = s.replace('"', '')
     basename = os.path.basename(s)
-    cwd = os.getcwd() if os.path.dirname(s) == "" else ""
+    cwd = g_workingdir + "/" if os.path.dirname(s) == "" else ""
     prog = (cwd + s).replace("\\", "/")
     ext = to_ext(basename)
     num = to_num(basename)
@@ -317,7 +340,8 @@ def main():
     try_mkdir(sampledir)
     try_mkdir(builddir)
     y_cookie()
-    num, ext, prog = path_to_nep(input("TestProgram Path = "))
+    s = input("TestProgram Path = ") if g_op == "" else g_op
+    num, ext, prog = path_to_nep(s)
     if ext in g_cmdc:
         print("Build >>>", " ".join(cmdio(g_cmdc[ext], prog)))
         if try_build(ext, prog):
