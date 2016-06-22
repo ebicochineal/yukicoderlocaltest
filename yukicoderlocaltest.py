@@ -25,11 +25,13 @@ g_cls = ""
 
 def setenv():
     global g_workingdir, g_timeout, g_op, g_cls
+    sp = ";"
     if len(sys.argv) > 1 : g_op = sys.argv[1]
     if "win" in sys.platform and "darwin" != sys.platform:
         g_cls = "cls"
     else:
         g_cls = "clear"
+        sp = ":"
     with open(g_crdir + "setting.ini", encoding="UTF-8") as f:
         mode = ""
         for i in f.readlines():
@@ -39,7 +41,7 @@ def setenv():
                     mode = s
                 else:
                     if mode == "[path]":
-                        os.environ["PATH"] = os.environ["PATH"] + ";" + s
+                        os.environ["PATH"] = os.environ["PATH"] + sp + s
                     if mode == "[workingdirectory]":
                         g_workingdir = s
                     if mode == "[tle]":
