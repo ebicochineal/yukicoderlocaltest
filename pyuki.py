@@ -51,10 +51,10 @@ def setenv():
                     if mode == "[tle]":
                         g_timeout = int(s)
                     if mode == "[compile]":
-                        ext, cmd = splitcmd(s)
+                        ext, cmd = map(lambda x : x.strip(), s.split(":", 1))
                         g_cmdc[ext] = cmd.split()
                     if mode == "[script]":
-                        ext, cmd = splitcmd(s)
+                        ext, cmd = map(lambda x : x.strip(), s.split(":", 1))
                         g_cmdi[ext] = cmd.split()
 
 class Test():
@@ -119,19 +119,6 @@ def green(s):
 def yellow(s):
     return "\033[43;30m" + s + "\033[0m"
 
-def splitcmd(s):
-    ext = ""
-    cmd = ""
-    f = 0
-    for i in s:
-        if i != ":" or f:
-            if f:
-                cmd += i
-            else:
-                ext += i
-        if i == ":" : f = 1
-    return (ext.strip(), cmd.strip())
-
 def lenfixed(s, n):
     if n <= 3:
         s = s[:n]
@@ -141,16 +128,6 @@ def lenfixed(s, n):
 
 def zipname(num):
     return "No{:0>4}.zip".format(num)
-
-def trimsample(s):
-    if len(s) > 0:
-        if s[-1] != "\n":
-            s += "\n"
-        if s[0] == "\n":
-            s = s[1:]
-        return s
-    else:
-        return s
 
 def cmdio(cmd, prog):
     r = []
@@ -257,10 +234,10 @@ def try_samplecase_download(num):
         ht = urllib.request.urlopen("http://yukicoder.me/problems/no/" + num).read().decode("utf-8")
         for i in ht.split("<h6>入力</h6>")[1:]:
             s = i.split("<pre>")[1].split("</pre>")[0]
-            data_in_list += [trimsample(s)]
+            data_in_list += [s.strip() + "\n"]
         for i in ht.split("<h6>出力</h6>")[1:]:
             s = i.split("<pre>")[1].split("</pre>")[0]
-            data_out_list += [trimsample(s)]
+            data_out_list += [s.strip() + "\n"]
         sampledir = g_crdir + g_sampledir
         provisionaldir = sampledir + zipname(num).split(".")[0] + "/"
         try_mkdir(provisionaldir)
@@ -312,8 +289,8 @@ def y_test(num, ext, prog, case):
         print(i, j, k)
     m = "     goto Yukicoder Page : [P]"
     m = m if g_browser else ""
-    print("TestCase View : [ENTER]" + m + "     Quit : [Q]")
     while 1:
+        print("TestCase View : [ENTER]" + m + "     Quit : [Q]")
         c = input()
         if c == "":
             view_ior(t)
