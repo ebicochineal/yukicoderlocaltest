@@ -17,6 +17,7 @@ g_builddir = "build/"
 g_in = "test_in/"
 g_out = "test_out/"
 g_workingdir = ""
+g_browser = ""
 g_timeout = 2
 g_cmdc = {}
 g_cmdi = {}
@@ -24,9 +25,9 @@ g_op = ""
 g_cls = ""
 
 def setenv():
-    global g_workingdir, g_timeout, g_op, g_cls
+    global g_workingdir,g_browser, g_timeout, g_op, g_cls
     sp = ";"
-    if len(sys.argv) > 1 : g_op = sys.argv[1]
+    if len(sys.argv) > 1 : g_op = sys.argv[1].replace("\\", "/")
     if "win" in sys.platform and "darwin" != sys.platform:
         g_cls = "cls"
     else:
@@ -40,10 +41,13 @@ def setenv():
                 if s[0] == "[":
                     mode = s
                 else:
+                    s = s.replace("\\", "/")
                     if mode == "[path]":
                         os.environ["PATH"] = os.environ["PATH"] + sp + s
                     if mode == "[workingdirectory]":
                         g_workingdir = s
+                    if mode == "[browser]":
+                        g_browser = s
                     if mode == "[tle]":
                         g_timeout = int(s)
                     if mode == "[compile]":
@@ -250,7 +254,7 @@ def try_samplecase_download(num):
     try:
         data_in_list = []
         data_out_list = []
-        ht = urllib.request.urlopen('http://yukicoder.me/problems/no/' + num).read().decode('utf-8')
+        ht = urllib.request.urlopen("http://yukicoder.me/problems/no/" + num).read().decode("utf-8")
         for i in ht.split("<h6>入力</h6>")[1:]:
             s = i.split("<pre>")[1].split("</pre>")[0]
             data_in_list += [trimsample(s)]
@@ -266,10 +270,10 @@ def try_samplecase_download(num):
             for i in range(len(data_in_list)):
                 filename = "sample{:0>2}".format(i) + ".txt"
                 with open(provisionaldir + g_in + filename, "wb") as f:
-                    f.write(data_in_list[i].encode('utf-8'))
+                    f.write(data_in_list[i].encode("utf-8"))
                 z.write(provisionaldir + g_in + filename, g_in + filename)
                 with open(provisionaldir + g_out + filename, "wb") as f:
-                    f.write(data_out_list[i].encode('utf-8'))
+                    f.write(data_out_list[i].encode("utf-8"))
                 z.write(provisionaldir + g_out + filename, g_out + filename)
         shutil.rmtree(provisionaldir)
         return True
@@ -306,7 +310,9 @@ def y_test(num, ext, prog, case):
     print("Run >>>", " ".join(t.cmd))
     for i, j, k in t.tests():
         print(i, j, k)
-    print("TestCase View : [ENTER]     Quit : [Q]")
+    m = "     goto Yukicoder Page : [P]"
+    m = m if g_browser else ""
+    print("TestCase View : [ENTER]" + m + "     Quit : [Q]")
     while 1:
         c = input()
         if c == "":
@@ -314,6 +320,8 @@ def y_test(num, ext, prog, case):
             break
         if c == "q":
             break
+        if c == "p" and m:
+            Popen([g_browser, "http://yukicoder.me/problems/no/" + num])
 
 def y_cookie():
     if os.path.exists(g_crdir + "cookie.txt") : return
