@@ -25,7 +25,7 @@ g_op = ""
 g_cls = ""
 
 def setenv():
-    global g_workingdir,g_browser, g_timeout, g_op, g_cls
+    global g_workingdir, g_browser, g_timeout, g_op, g_cls
     sp = ";"
     if len(sys.argv) > 1 : g_op = sys.argv[1].replace("\\", "/")
     if "win" in sys.platform and "darwin" != sys.platform:
@@ -87,7 +87,7 @@ class Test():
             if jadge(out, data_out):
                 result = [green("AC "), etime, din2k, dout2k, out]
             elif err == "":
-                result = [yellow("WA "), "-----", din2k, dout2k, out]
+                result = [yellow("WA "), etime, din2k, dout2k, out]
             else:
                 result = [yellow("RE "), "-----", din2k, dout2k, err]
         except:
