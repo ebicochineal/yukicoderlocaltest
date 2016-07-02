@@ -105,9 +105,12 @@ def jadge(v1, v2):
     sp2 = v2.split("\n")
     if len(sp1) != len(sp2) : return False
     for i in range(len(sp1)):
-        if sp1[i] != sp2[i]:
+        s1, s2 = sp1[i], sp2[i]
+        if s1 != s2:
             try:
-                if round(float(sp1[i]), 3) != round(float(sp2[i]), 3):
+                if (s1[0] == "+" or s2[0] == "+") and s1[0] != s2[0]:
+                    return False
+                if round(float(s1), 3) != round(float(s2), 3):
                     return False
             except:
                 return False
