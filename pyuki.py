@@ -50,16 +50,16 @@ def setenv():
                         g_browser = s
                     if mode == "[tle]":
                         g_timeout = int(s)
-                    if mode == "[compile]":
-                        ext, cmd = map(lambda x : x.strip(), s.split(":", 1))
-                        g_cmdc[ext] = cmd.split()
-                    if mode == "[script]":
-                        ext, cmd = map(lambda x : x.strip(), s.split(":", 1))
-                        g_cmdi[ext] = cmd.split()
+                    if mode == "[build]":
+                        lang, cmd = map(lambda x : x.strip(), s.split(":", 1))
+                        g_cmdc[lang] = cmd.split()
+                    if mode == "[run]":
+                        lang, cmd = map(lambda x : x.strip(), s.split(":", 1))
+                        g_cmdi[lang] = cmd.split()
 
 class Test():
-    def __init__(self, num, ext, prog, case):
-        cmd = g_cmdi[ext] if ext in g_cmdi else ["[i]"]
+    def __init__(self, num, lang, prog, case):
+        cmd = g_cmdi[lang] if lang in g_cmdi else ["[i]"]
         self.cmd = cmdio(cmd, prog)
         self.data = {}
         self.case = case
@@ -136,18 +136,20 @@ def cmdio(cmd, prog):
     r = []
     for i in cmd:
         i = i.replace("[i]", prog)
+        i = i.replace("[c]", prog.split("/")[-1].split(".")[0])
         i = i.replace("[o]", g_crdir + g_builddir + "test.exe")
+        i = i.replace("[d]", g_crdir + g_builddir)
         r += [i]
     return r
 
-def path_to_nep(s):
+def path_to_nlp(s):
     s = s.replace('"', '')
     basename = os.path.basename(s)
     cwd = g_workingdir + "/" if os.path.dirname(s) == "" else ""
     prog = (cwd + s).replace("\\", "/")
-    ext = to_ext(basename)
+    lang = to_lang(basename)
     num = to_num(basename)
-    return (num, ext, prog)
+    return (num, lang, prog)
 
 def view_ior(test):
     n = 0
@@ -165,14 +167,14 @@ def view_ior(test):
         for y in range(h):
             print("|".join([lin[y], lout[y], lprg[y]]))
         print("-"*(tw-1))
-        print(lenfixed("Next : [ENTER]     Quit : [Q]", w*2+2) + lenfixed(i, w))
+        print(lenfixed("next : [ENTER]     quit : [Q]", w*2+2) + lenfixed(i, w))
         s = input()
         if s == "":
             n = (n+1) % len(test.filelist)
         if s == "q":
             break
 
-def to_ext(s):
+def to_lang(s):
     sp = s.split(".")
     return sp[-1] if len(sp) > 1 else None
 
@@ -204,9 +206,9 @@ def to_list(s, w, h):
         r[i] = r[i] + " " * (w-len(r[i]))
     return r
 
-def try_build(ext, prog):
+def try_build(lang, prog):
     try:
-        os.system(" ".join(cmdio(g_cmdc[ext], prog)))
+        os.system(" ".join(cmdio(g_cmdc[lang], prog)))
         return True
     except:
         return False
@@ -285,15 +287,15 @@ def y_download(num):
         else:
             print("SampleCase Download Failed")
 
-def y_test(num, ext, prog, case):
-    t = Test(num, ext, prog, case)
+def y_test(num, lang, prog, case):
+    t = Test(num, lang, prog, case)
     print("Run >>>", " ".join(t.cmd))
     for i, j, k in t.tests():
         print(i, j, k)
-    m = "     goto Yukicoder Page : [P]"
+    m = "     goto yukicoder problempage : [P]"
     m = m if g_browser else ""
     while 1:
-        print("TestCase View : [ENTER]" + m + "     Quit : [Q]")
+        print("testcase view : [ENTER]" + m + "     quit : [Q]")
         c = input()
         if c == "":
             view_ior(t)
@@ -315,11 +317,22 @@ def y_cookie():
         print("Skip REVEL_SESSION")
         print("SampleCase Only")
 
-def y_exeremove():
-    rm = g_crdir + g_builddir + "test.exe"
-    if os.path.exists(rm):
-        print("Remove >>>", g_builddir + "test.exe")
-        os.remove(rm)
+def all_file_remove(dir):
+    for i in os.listdir(dir):
+        try:
+            os.remove(dir + i)
+        except:
+            pass
+
+def build_file_path(dir):
+    l = os.listdir(dir)
+    return dir + l[0] if len(l) else ""
+
+def check_lang(lang):
+    if any([lang in g_cmdc, lang in g_cmdi, lang == "exe"]):
+        return lang
+    else:
+        return None
 
 def main():
     os.system(g_cls)
@@ -329,28 +342,32 @@ def main():
     try_mkdir(testdir)
     try_mkdir(sampledir)
     try_mkdir(builddir)
+    all_file_remove(builddir)
     y_cookie()
     s = input("TestProgram Path = ") if g_op == "" else g_op
-    num, ext, prog = path_to_nep(s)
-    if ext in g_cmdc:
-        print("Build >>>", " ".join(cmdio(g_cmdc[ext], prog)))
-        if try_build(ext, prog):
-            ext = "exe"
-            prog = builddir + "test.exe"
+    num, lang, prog = path_to_nlp(s)
+    lang = check_lang(lang)
+    if lang == None:
+        print(list(set(list(g_cmdc) + list(g_cmdi))))
+        lang = check_lang(input("Source Language = ").strip())
     if num == None:
         num = to_num(input("Problem Number = "))
+    if lang in g_cmdc:
+        print("Build >>>", " ".join(cmdio(g_cmdc[lang], prog)))
+        if try_build(lang, prog):
+            lang = "exe" if "[o]" in g_cmdc[lang] else lang
+            prog = build_file_path(builddir)
     y_download(num)
-    if all([num, ext, prog]):
+    if all([num, lang, prog]):
         samplecase = sampledir + zipname(num)
         testcase = testdir + zipname(num)
         cs = os.path.exists(samplecase)
         ct = os.path.exists(testcase)
         cp = os.path.exists(prog)
         if all([ct, cp]):
-            y_test(num, ext, prog, testcase)
+            y_test(num, lang, prog, testcase)
         if all([cs, not ct, cp]):
-            y_test(num, ext, prog, samplecase)
-    y_exeremove()
+            y_test(num, lang, prog, samplecase)
 
 if __name__ == '__main__':
     setenv()
