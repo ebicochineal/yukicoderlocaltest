@@ -64,6 +64,7 @@ class Test():
         self.data = {}
         self.case = case
         self.filelist = []
+        self.num = num
         with ZipFile(self.case, 'r') as z:
             self.filelist = sorted([x.split(g_in)[1] for x in z.namelist() if g_in in x])
     def tests(self):
@@ -74,8 +75,8 @@ class Test():
             yield (self.data[i][0], self.data[i][1], i)
     def run(self, filename, data_in, data_out):
         data_in_encode = data_in.encode('utf-8')
-        din2k = lenfixed(data_in, 2000)
-        dout2k = lenfixed(data_out, 2000)
+        din2k = limitstr(data_in, 2000)
+        dout2k = limitstr(data_out, 2000)
         result = []
         start = time.time()
         p = Popen(self.cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE)
@@ -99,8 +100,42 @@ class Test():
         with ZipFile(self.case, 'r') as z:
             return z.read(path).decode("utf-8")
 
+def view_ior(test):
+    retry = False
+    n = 0
+    num = test.num
+    m = "   problempage:[P]"
+    m = m if g_browser else ""
+    while 1:
+        i = test.filelist[n]
+        tw, th = os.get_terminal_size()
+        w = tw // 3 - 1
+        h = th - 6
+        lin = to_list(test.data[i][2], w, h)
+        lout = to_list(test.data[i][3], w, h)
+        lprg = to_list(test.data[i][4], w, h)
+        os.system(g_cls)
+        print(test.data[i][0], test.data[i][1])
+        print(" ".join([limitstr("data_in", w), limitstr("data_out", w), limitstr("program_output", w)]))
+        for y in range(h):
+            print("|".join([lin[y], lout[y], lprg[y]]))
+        print("-"*(tw-1))
+        print(limitstr("next:[ENTER]" + m + "   retry:[R]" + "   quit:[Q]", w*2+2) + limitstr(i, w))
+        c = input()
+        if c == "":
+            n = (n+1) % len(test.filelist)
+        if c == "q":
+            break
+        if c == "r":
+            retry = True
+            break
+        if c == "p" and m:
+            Popen([g_browser, "http://yukicoder.me/problems/no/" + num])
+    return retry
+
 def jadge(v1, v2):
     if v1 == v2 : return True
+    if v1.strip() == v2.strip() : return True
     sp1 = v1.split("\n")
     sp2 = v2.split("\n")
     if len(sp1) != len(sp2) : return False
@@ -122,12 +157,12 @@ def green(s):
 def yellow(s):
     return "\033[43;30m" + s + "\033[0m"
 
-def lenfixed(s, n):
+def limitstr(s, n):
     if n <= 3:
         s = s[:n]
     elif len(s) > n:
         s = s[:n-3] + "..."
-    return ("{: <" + str(n) + "}").format(s)
+    return s.ljust(n, " ")
 
 def zipname(num):
     return "No{:0>4}.zip".format(num)
@@ -151,29 +186,6 @@ def path_to_nlp(s):
     num = to_num(basename)
     return (num, lang, prog)
 
-def view_ior(test):
-    n = 0
-    while 1:
-        i = test.filelist[n]
-        tw, th = os.get_terminal_size()
-        w = tw // 3 - 1
-        h = th - 6
-        lin = to_list(test.data[i][2], w, h)
-        lout = to_list(test.data[i][3], w, h)
-        lprg = to_list(test.data[i][4], w, h)
-        os.system(g_cls)
-        print(test.data[i][0], test.data[i][1])
-        print(" ".join([lenfixed("data_in", w), lenfixed("data_out", w), lenfixed("program_output", w)]))
-        for y in range(h):
-            print("|".join([lin[y], lout[y], lprg[y]]))
-        print("-"*(tw-1))
-        print(lenfixed("next : [ENTER]     quit : [Q]", w*2+2) + lenfixed(i, w))
-        s = input()
-        if s == "":
-            n = (n+1) % len(test.filelist)
-        if s == "q":
-            break
-
 def to_lang(s):
     sp = s.split(".")
     return sp[-1] if len(sp) > 1 else None
@@ -193,18 +205,34 @@ def to_num(s):
 def to_list(s, w, h):
     r = []
     for i in s.split("\n"):
-        if len(i) > w:
-            for j in range(len(i)//w):
-                r += [i[j*w:j*w+w]]
-            if len(i)%w:
-                r += [i[(len(i)//w)*w:]]
+        if mlen(i) > w:
+            b = ""
+            bw = 0
+            for j in i:
+                c = 2 if ord(j) > 255 else 1
+                if bw + c > w:
+                    r += [b]
+                    b = ""
+                    bw = 0
+                b += j
+                bw += c
+            r += [b]
         else:
             r += [i]
     if len(r) < h : r += [""] * (h-len(r))
     if len(r) > h : r = r[:h]
     for i in range(h):
-        r[i] = r[i] + " " * (w-len(r[i]))
+        r[i] = r[i] + " " * (w-mlen(r[i]))
     return r
+
+def mlen(s):
+    c = 0
+    for i in s:
+        if ord(i) > 255:
+            c += 2
+        else:
+            c += 1
+    return c
 
 def try_build(lang, prog):
     try:
@@ -288,22 +316,27 @@ def y_download(num):
             print("SampleCase Download Failed")
 
 def y_test(num, lang, prog, case):
+    retry = False
     t = Test(num, lang, prog, case)
     print("Run >>>", " ".join(t.cmd))
     for i, j, k in t.tests():
         print(i, j, k)
-    m = "     goto yukicoder problempage : [P]"
+    m = "   problempage:[P]"
     m = m if g_browser else ""
     while 1:
-        print("testcase view : [ENTER]" + m + "     quit : [Q]")
+        print("testcase view:[ENTER]" + m + "   retry:[R]" + "   quit:[Q]")
         c = input()
         if c == "":
-            view_ior(t)
+            retry = view_ior(t)
             break
         if c == "q":
             break
+        if c == "r":
+            retry = True
+            break
         if c == "p" and m:
             Popen([g_browser, "http://yukicoder.me/problems/no/" + num])
+    return retry
 
 def y_cookie():
     if os.path.exists(g_crdir + "cookie.txt") : return
@@ -358,16 +391,18 @@ def main():
             lang = "exe" if "[o]" in g_cmdc[lang] else lang
             prog = build_file_path(builddir)
     y_download(num)
-    if all([num, lang, prog]):
+    retry = all([num, lang, prog])
+    while retry:
         samplecase = sampledir + zipname(num)
         testcase = testdir + zipname(num)
         cs = os.path.exists(samplecase)
         ct = os.path.exists(testcase)
         cp = os.path.exists(prog)
-        if all([ct, cp]):
-            y_test(num, lang, prog, testcase)
-        if all([cs, not ct, cp]):
-            y_test(num, lang, prog, samplecase)
+        if all([ct, cp]):# download testcase
+            retry = y_test(num, lang, prog, testcase)
+        if all([cs, not ct, cp]):# samplecase
+            retry = y_test(num, lang, prog, samplecase)
+        os.system(g_cls)
 
 if __name__ == '__main__':
     setenv()
