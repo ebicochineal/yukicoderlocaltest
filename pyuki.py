@@ -375,34 +375,36 @@ def main():
     try_mkdir(testdir)
     try_mkdir(sampledir)
     try_mkdir(builddir)
-    all_file_remove(builddir)
     y_cookie()
     s = input("TestProgram Path = ") if g_op == "" else g_op
-    num, lang, prog = path_to_nlp(s)
-    lang = check_lang(lang)
-    if lang == None:
-        print(list(set(list(g_cmdc) + list(g_cmdi))))
-        lang = check_lang(input("Source Language = ").strip())
-    if num == None:
-        num = to_num(input("Problem Number = "))
-    if lang in g_cmdc:
-        print("Build >>>", " ".join(cmdio(g_cmdc[lang], prog)))
-        if try_build(lang, prog):
-            lang = "exe" if "[o]" in g_cmdc[lang] else lang
-            prog = build_file_path(builddir)
-    y_download(num)
-    retry = all([num, lang, prog])
+    retry = True
     while retry:
-        samplecase = sampledir + zipname(num)
-        testcase = testdir + zipname(num)
-        cs = os.path.exists(samplecase)
-        ct = os.path.exists(testcase)
-        cp = os.path.exists(prog)
-        if all([ct, cp]):# download testcase
-            retry = y_test(num, lang, prog, testcase)
-        if all([cs, not ct, cp]):# samplecase
-            retry = y_test(num, lang, prog, samplecase)
+        retry = False
         os.system(g_cls)
+        all_file_remove(builddir)
+        num, lang, prog = path_to_nlp(s)
+        lang = check_lang(lang)
+        if lang == None:
+            print(list(set(list(g_cmdc) + list(g_cmdi))))
+            lang = check_lang(input("Source Language = ").strip())
+        if num == None:
+            num = to_num(input("Problem Number = "))
+        if lang in g_cmdc:
+            print("Build >>>", " ".join(cmdio(g_cmdc[lang], prog)))
+            if try_build(lang, prog):
+                lang = "exe" if "[o]" in g_cmdc[lang] else lang
+                prog = build_file_path(builddir)
+        y_download(num)
+        if all([num, lang, prog]):
+            samplecase = sampledir + zipname(num)
+            testcase = testdir + zipname(num)
+            cs = os.path.exists(samplecase)
+            ct = os.path.exists(testcase)
+            cp = os.path.exists(prog)
+            if all([ct, cp]):# download testcase
+                retry = y_test(num, lang, prog, testcase)
+            if all([cs, not ct, cp]):# samplecase
+                retry = y_test(num, lang, prog, samplecase)
 
 if __name__ == '__main__':
     setenv()
