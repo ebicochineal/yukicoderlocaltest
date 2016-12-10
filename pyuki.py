@@ -367,6 +367,9 @@ def check_lang(lang):
     else:
         return None
 
+def path_d(str):
+    return str.replace('\"', '').replace('\'', '').lstrip().rstrip()
+
 def main():
     os.system(g_cls)
     testdir = g_crdir + g_testdir
@@ -376,7 +379,7 @@ def main():
     try_mkdir(sampledir)
     try_mkdir(builddir)
     y_cookie()
-    s = input("TestProgram Path = ") if g_op == "" else g_op
+    s = path_d(input("TestProgram Path = ") if g_op == "" else g_op)
     retry = True
     while retry:
         retry = False
