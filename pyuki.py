@@ -62,11 +62,13 @@ def setenv():
 def getch_unix():
     import sys, tty, termios
     fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
     try:
         tty.setraw(sys.stdin.fileno())
-        return sys.stdin.read(1)
-    except:
-        termios.tcsetattr(fd, termios.TCSADRAIN, termios.tcgetattr(fd))
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    return ch
 
 def getch_win():
     import msvcrt
