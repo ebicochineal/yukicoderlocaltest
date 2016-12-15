@@ -10,28 +10,31 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile, ZIP_STORED
 from subprocess import Popen, PIPE
 
-g_crdir = os.path.dirname(__file__).replace("\\", "/") + "/"
+p = os.path.dirname(__file__).replace("\\", "/") + "/"
+g_crdir = "" if p == '/' else p
 g_testdir = "testcase/"
 g_sampledir = "samplecase/"
-g_builddir = "build/"
+g_compiledir = "compile/"
 g_in = "test_in/"
 g_out = "test_out/"
-g_workingdir = ""
 g_browser = ""
 g_timeout = 2
 g_cmdc = {}
 g_cmdi = {}
 g_op = ""
 g_cls = ""
+g_getch = None
 
 def setenv():
-    global g_workingdir, g_browser, g_timeout, g_op, g_cls
+    global g_browser, g_timeout, g_op, g_cls, g_getch
     sp = ";"
     if len(sys.argv) > 1 : g_op = sys.argv[1].replace("\\", "/")
     if "win" in sys.platform and "darwin" != sys.platform:
         g_cls = "cls"
+        g_getch = getch_win
     else:
         g_cls = "clear"
+        g_getch = getch_unix
         sp = ":"
     with open(g_crdir + "setting.ini", encoding="UTF-8") as f:
         mode = ""
@@ -44,18 +47,33 @@ def setenv():
                     s = s.replace("\\", "/")
                     if mode == "[path]":
                         os.environ["PATH"] = os.environ["PATH"] + sp + s
-                    if mode == "[workingdirectory]":
-                        g_workingdir = s
                     if mode == "[browser]":
                         g_browser = s
                     if mode == "[tle]":
                         g_timeout = int(s)
-                    if mode == "[build]":
+                    if mode == "[compile]":
                         lang, cmd = map(lambda x : x.strip(), s.split(":", 1))
                         g_cmdc[lang] = cmd.split()
-                    if mode == "[run]":
+                    if mode == "[interpreter]":
                         lang, cmd = map(lambda x : x.strip(), s.split(":", 1))
                         g_cmdi[lang] = cmd.split()
+
+
+def getch_unix():
+    import sys, tty, termios
+    fd = sys.stdin.fileno()
+    try:
+        tty.setraw(sys.stdin.fileno())
+        return sys.stdin.read(1)
+    except:
+        termios.tcsetattr(fd, termios.TCSADRAIN, termios.tcgetattr(fd))
+
+def getch_win():
+    import msvcrt
+    try:
+        return msvcrt.getch().decode('utf8')
+    except:
+        return ''
 
 class Test():
     def __init__(self, num, lang, prog, case):
@@ -121,8 +139,8 @@ def view_ior(test):
             print("|".join([lin[y], lout[y], lprg[y]]))
         print("-"*(tw-1))
         print(limitstr("next:[ENTER]" + m + "   retry:[R]" + "   quit:[Q]", w*2+2) + limitstr(i, w))
-        c = input()
-        if c == "":
+        c = g_getch()
+        if c == "\r":
             n = (n+1) % len(test.filelist)
         if c == "q":
             break
@@ -172,16 +190,15 @@ def cmdio(cmd, prog):
     for i in cmd:
         i = i.replace("[i]", prog)
         i = i.replace("[c]", prog.split("/")[-1].split(".")[0])
-        i = i.replace("[o]", g_crdir + g_builddir + "test.exe")
-        i = i.replace("[d]", g_crdir + g_builddir)
+        i = i.replace("[o]", g_crdir + g_compiledir + "test.exe")
+        i = i.replace("[d]", g_crdir + g_compiledir)
         r += [i]
     return r
 
 def path_to_nlp(s):
     s = s.replace('"', '')
     basename = os.path.basename(s)
-    cwd = g_workingdir + "/" if os.path.dirname(s) == "" else ""
-    prog = (cwd + s).replace("\\", "/")
+    prog = s.replace("\\", "/")
     lang = to_lang(basename)
     num = to_num(basename)
     return (num, lang, prog)
@@ -234,7 +251,7 @@ def mlen(s):
             c += 1
     return c
 
-def try_build(lang, prog):
+def try_compile(lang, prog):
     try:
         os.system(" ".join(cmdio(g_cmdc[lang], prog)))
         return True
@@ -323,10 +340,10 @@ def y_test(num, lang, prog, case):
         print(i, j, k)
     m = "   problempage:[P]"
     m = m if g_browser else ""
+    print("testcase view:[ENTER]" + m + "   retry:[R]" + "   quit:[Q]")
     while 1:
-        print("testcase view:[ENTER]" + m + "   retry:[R]" + "   quit:[Q]")
-        c = input()
-        if c == "":
+        c = g_getch()
+        if c == "\r":
             retry = view_ior(t)
             break
         if c == "q":
@@ -350,16 +367,16 @@ def y_cookie():
         print("Skip REVEL_SESSION")
         print("SampleCase Only")
 
-def all_file_remove(dir):
-    for i in os.listdir(dir):
-        try:
-            os.remove(dir + i)
-        except:
-            pass
+def compile_file_remove(dir):
+    try:
+        for i in os.listdir(dir):
+            if i[:4] == "test":
+                os.remove(dir + i)
+    except:
+        pass
 
-def build_file_path(dir):
-    l = os.listdir(dir)
-    return dir + l[0] if len(l) else ""
+def compile_file_path(dir):
+    return dir + "test.exe"
 
 def check_lang(lang):
     if any([lang in g_cmdc, lang in g_cmdi, lang == "exe"]):
@@ -374,17 +391,17 @@ def main():
     os.system(g_cls)
     testdir = g_crdir + g_testdir
     sampledir = g_crdir + g_sampledir
-    builddir = g_crdir + g_builddir
+    compiledir = g_crdir + g_compiledir
     try_mkdir(testdir)
     try_mkdir(sampledir)
-    try_mkdir(builddir)
+    try_mkdir(compiledir)
     y_cookie()
     s = path_d(input("TestProgram Path = ") if g_op == "" else g_op)
     retry = True
     while retry:
         retry = False
         os.system(g_cls)
-        all_file_remove(builddir)
+        compile_file_remove(compiledir)
         num, lang, prog = path_to_nlp(s)
         lang = check_lang(lang)
         if lang == None:
@@ -393,10 +410,10 @@ def main():
         if num == None:
             num = to_num(input("Problem Number = "))
         if lang in g_cmdc:
-            print("Build >>>", " ".join(cmdio(g_cmdc[lang], prog)))
-            if try_build(lang, prog):
+            print("compile >>>", " ".join(cmdio(g_cmdc[lang], prog)))
+            if try_compile(lang, prog):
                 lang = "exe" if "[o]" in g_cmdc[lang] else lang
-                prog = build_file_path(builddir)
+                prog = compile_file_path(compiledir)
         y_download(num)
         if all([num, lang, prog]):
             samplecase = sampledir + zipname(num)
