@@ -198,9 +198,9 @@ def cmdio(cmd, prog):
     return r
 
 def path_to_nlp(s):
-    s = s.replace('"', '')
+    s = s.replace('\"', '').replace('\'', '').lstrip().rstrip()
     basename = os.path.basename(s)
-    prog = s.replace("\\", "/")
+    prog = s
     lang = to_lang(basename)
     num = to_num(basename)
     return (num, lang, prog)
