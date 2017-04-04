@@ -423,6 +423,7 @@ def main():
             cs = os.path.exists(samplecase)
             ct = os.path.exists(testcase)
             cp = os.path.exists(prog)
+            if all([ct, cp]):# testcase
                 retry = y_test(num, lang, prog, testcase)
             if all([cs, not ct, cp]):# samplecase
                 retry = y_test(num, lang, prog, samplecase)
