@@ -150,7 +150,7 @@ def view_ior(test):
             retry = True
             break
         if c == "p" and m:
-            Popen([g_browser, "http://yukicoder.me/problems/no/" + num])
+            Popen([g_browser, "https://yukicoder.me/problems/no/" + num])
     return retry
 
 def jadge(v1, v2):
@@ -271,7 +271,7 @@ def try_testcase_download(num):
         cj = http.cookiejar.LWPCookieJar()
         cj.load(g_crdir + "cookie.txt")
         opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
-        url = "http://yukicoder.me/problems/no/" + num + "/testcase.zip"
+        url = "https://yukicoder.me/problems/no/" + num + "/testcase.zip"
         with opener.open(url) as r:
             with open(g_crdir + g_testdir + zipname(num), "wb") as f:
                 f.write(r.read())
@@ -283,7 +283,7 @@ def try_samplecase_download(num):
     try:
         data_in_list = []
         data_out_list = []
-        ht = urllib.request.urlopen("http://yukicoder.me/problems/no/" + num).read().decode("utf-8")
+        ht = urllib.request.urlopen("https://yukicoder.me/problems/no/" + num).read().decode("utf-8")
         for i in ht.split("<h6>入力</h6>")[1:]:
             s = i.split("<pre>")[1].split("</pre>")[0]
             data_in_list += [s.strip() + "\n"]
@@ -354,7 +354,7 @@ def y_test(num, lang, prog, case):
             retry = True
             break
         if c == "p" and m:
-            Popen([g_browser, "http://yukicoder.me/problems/no/" + num])
+            Popen([g_browser, "https://yukicoder.me/problems/no/" + num])
     return retry
 
 def y_cookie():
