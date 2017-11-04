@@ -311,7 +311,7 @@ def try_samplecase_download(num):
 
 def try_makecookie(session):
     try:
-        expires = (datetime.today() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        expires = (datetime.today() + timedelta(days=360)).strftime("%Y-%m-%d %H:%M:%S")
         with open(g_crdir + "cookie.txt", "w") as f:
             w = '#LWP-Cookies-2.0\nSet-Cookie3: REVEL_SESSION="%s"; path="/"; domain="yukicoder.me"; path_spec; expires="%s"; version=0'%(session, expires)
             f.write(w)
