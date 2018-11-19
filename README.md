@@ -5,6 +5,8 @@ yukicoderからテストケースダウンロード、プログラムのテス�
 テストケースがダウンロードできなかった場合は入力サンプルでテスト  
 pyuki.pyはPython3.5で実行  
 テストケースダウンロードにyukicoderのREVEL_SESSIONの値が必要。ブラウザでクッキーを表示し取得  
+chromeでクッキー表示
+```chrome://settings/cookies/detail?site=yukicoder.me```  
 yukicoderからダウンロードするには ノーマル か ゆるふわ に設定  
 テストするプログラムファイル名に問題ナンバーが入っていると問題ナンバーの入力を省略できる  
 ○ 0001.py, 1.py, 1.exe problem0001.exe, yukicoder0001.exe  
